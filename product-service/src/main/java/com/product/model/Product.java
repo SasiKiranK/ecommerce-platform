@@ -3,7 +3,10 @@ package com.product.model;
 import java.util.UUID;
 
 // Abstract Base class
+@Document(collection = "products") // 👈 MongoDB collection name
 public abstract class Product {
+    
+    @Id
     protected String id;
     protected String name;
     protected String description;
@@ -21,7 +24,7 @@ public abstract class Product {
         this.price = price;
     }
 
-    public abstract displayInfo();
+    public abstract void displayInfo();
 
     public String getId(){
         return id;

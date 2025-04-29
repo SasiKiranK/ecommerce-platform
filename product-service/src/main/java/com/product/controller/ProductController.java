@@ -8,6 +8,7 @@ import com.product.abstractfactory.ProductAbstractFactory;
 import com.product.observer.ProductCreationListener;
 import com.product.observer.ProductPublisher;
 import com.product.singleton.LoggerSingleton;
+import com.product.service.ProductService;
 
 import org.springframework.web.bind.annotation.*;
 
@@ -21,10 +22,11 @@ public class ProductController {
     private final ProductPublisher publisher = new ProductPublisher();
     private final LoggerSingleton logger = LoggerSingleton.getInstance();
     private final ProductAbstractFactory productFactory = new ConcreteProductFactory();
-    private final List<Product> productStore = new ArrayList<>(); // temporary in-memory store
+    private final ProductService productService;
 
-    public ProductController() {
-        // Register 2 listeners
+    public ProductController(ProductService productService) {
+        this.productService = productService;
+
         publisher.registerObserver(new ProductCreationListener("InventoryService"));
         publisher.registerObserver(new ProductCreationListener("NotificationService"));
     }
@@ -36,7 +38,6 @@ public class ProductController {
                                        @RequestParam double price,
                                        @RequestParam String category) {
 
-        // Using Builder + Factory + Observer
         ProductBuilder builder = new ProductBuilder();
         SimpleProduct simpleProduct = builder
                 .setName(name)
@@ -48,9 +49,7 @@ public class ProductController {
         logger.log("Creating Simple Product: " + name);
 
         publisher.notifyObservers(simpleProduct);
-        productStore.add(simpleProduct);
-
-        return simpleProduct;
+        return productService.saveProduct(simpleProduct);
     }
 
     // Create a bundle product
@@ -61,25 +60,18 @@ public class ProductController {
 
         logger.log("Creating Bundle Product: " + bundleName);
 
-        // Select first 2 products to bundle (demo purpose)
-        List<Product> productsToBundle = new ArrayList<>();
-        if (productStore.size() >= 2) {
-            productsToBundle.add(productStore.get(0));
-            productsToBundle.add(productStore.get(1));
-        }
+        List<Product> productsToBundle = productService.getAllProducts();
 
         Product bundle = productFactory.createBundleProduct(bundleName, description, price, productsToBundle);
 
         publisher.notifyObservers(bundle);
-        productStore.add(bundle);
-
-        return bundle;
+        return productService.saveProduct(bundle);
     }
 
     // Get all products
     @GetMapping
     public List<Product> getAllProducts() {
         logger.log("Fetching all products...");
-        return productStore;
+        return productService.getAllProducts();
     }
 }

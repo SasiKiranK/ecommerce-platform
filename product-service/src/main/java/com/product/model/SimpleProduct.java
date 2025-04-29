@@ -8,7 +8,7 @@ public class SimpleProduct extends Product implements ProductPrototype {
     private String category;
     
     public SimpleProduct(){
-        this();
+        super();
     }
 
     public SimpleProduct(String name, String description, double price, String category) {
