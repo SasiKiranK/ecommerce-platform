@@ -1,6 +1,8 @@
 package com.product.controller;
 
 import com.product.builder.ProductBuilder;
+import com.product.dto.ProductRequestDTO;
+import com.product.dto.ProductResponseDTO;
 import com.product.model.Product;
 import com.product.model.SimpleProduct;
 import com.product.abstractfactory.ConcreteProductFactory;
@@ -12,8 +14,10 @@ import com.product.service.ProductService;
 
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
+import jakarta.validation.Valid;
+
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/products")
@@ -33,45 +37,76 @@ public class ProductController {
 
     // Create a simple product
     @PostMapping("/simple")
-    public Product createSimpleProduct(@RequestParam String name,
-                                       @RequestParam String description,
-                                       @RequestParam double price,
-                                       @RequestParam String category) {
+    public ProductResponseDTO createSimpleProduct(@Valid @RequestBody ProductRequestDTO requestDTO) {
 
         ProductBuilder builder = new ProductBuilder();
         SimpleProduct simpleProduct = builder
-                .setName(name)
-                .setDescription(description)
-                .setPrice(price)
-                .setCategory(category)
+                .setName(requestDTO.getName())
+                .setDescription(requestDTO.getDescription())
+                .setPrice(requestDTO.getPrice())
+                .setCategory(requestDTO.getCategory())
                 .buildSimpleProduct();
 
-        logger.log("Creating Simple Product: " + name);
+        logger.log("Creating Simple Product: " + requestDTO.getName());
 
         publisher.notifyObservers(simpleProduct);
-        return productService.saveProduct(simpleProduct);
-    }
+        Product saved = productService.saveProduct(simpleProduct);
 
-    // Create a bundle product
-    @PostMapping("/bundle")
-    public Product createBundleProduct(@RequestParam String bundleName,
-                                       @RequestParam String description,
-                                       @RequestParam double price) {
-
-        logger.log("Creating Bundle Product: " + bundleName);
-
-        List<Product> productsToBundle = productService.getAllProducts();
-
-        Product bundle = productFactory.createBundleProduct(bundleName, description, price, productsToBundle);
-
-        publisher.notifyObservers(bundle);
-        return productService.saveProduct(bundle);
+        return new ProductResponseDTO(
+            saved.getId(),
+            saved.getName(),
+            saved.getDescription(),
+            saved.getPrice(),
+            requestDTO.getCategory()
+        );
     }
 
     // Get all products
     @GetMapping
-    public List<Product> getAllProducts() {
+    public List<ProductResponseDTO> getAllProducts() {
         logger.log("Fetching all products...");
-        return productService.getAllProducts();
+
+        return productService.getAllProducts()
+                .stream()
+                .map(p -> new ProductResponseDTO(
+                    p.getId(),
+                    p.getName(),
+                    p.getDescription(),
+                    p.getPrice(),
+                    (p instanceof SimpleProduct) ? ((SimpleProduct) p).getCategory() : "Bundle"
+                ))
+                .collect(Collectors.toList());
     }
+
+    // Update an existing product
+@PutMapping("/{id}")
+public ProductResponseDTO updateProduct(@PathVariable String id,
+                                        @Valid @RequestBody ProductRequestDTO requestDTO) {
+
+    ProductBuilder builder = new ProductBuilder();
+    SimpleProduct updatedProduct = builder
+            .setName(requestDTO.getName())
+            .setDescription(requestDTO.getDescription())
+            .setPrice(requestDTO.getPrice())
+            .setCategory(requestDTO.getCategory())
+            .buildSimpleProduct();
+
+    Product saved = productService.updateProduct(id, updatedProduct);
+
+    return new ProductResponseDTO(
+        saved.getId(),
+        saved.getName(),
+        saved.getDescription(),
+        saved.getPrice(),
+        requestDTO.getCategory()
+    );
+}
+
+// Delete a product
+@DeleteMapping("/{id}")
+public String deleteProduct(@PathVariable String id) {
+    productService.deleteProduct(id);
+    return "Product with ID " + id + " has been deleted successfully.";
+}
+
 }

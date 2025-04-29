@@ -1,6 +1,9 @@
 package com.product.model;
 
 import java.util.UUID;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
 
 // Abstract Base class
 @Document(collection = "products") // 👈 MongoDB collection name
