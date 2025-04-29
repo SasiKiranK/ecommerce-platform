@@ -1,59 +1,46 @@
-version: '3.8'
+version: '3.9'
 
 services:
-  # postgres:
-  #   image: postgres:14
-  #   environment:
-  #     POSTGRES_DB: orders
-  #     POSTGRES_USER: user
-  #     POSTGRES_PASSWORD: password
-  #   ports:
-  #     - "5432:5432"
-  #   networks:
-  #     - backend
-
-  # mongodb:
-  #   image: mongo:6
-  #   ports:
-  #     - "27017:27017"
-  #   networks:
-  #     - backend
+  mongo:
+    image: mongo
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
 
   discovery-server:
     build:
       context: ./discovery-server
+      dockerfile: Dockerfile
     container_name: discovery-server
     ports:
-      - "8761:8761"   # 👈 very important: expose 8761
-    networks:
-      - backend
+      - "8761:8761"
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:8761/eureka"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 5
+
+  product-service:
+    build:
+      context: ./product-service
+      dockerfile: Dockerfile
+    container_name: product-service
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./product-service/src:/app/src
+      - ./product-service/target/classes:/app/target/classes
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATA_MONGODB_URI=mongodb://mongo:27017/products
+    depends_on:
+      - discovery-server
+        # condition: service_healthy
+      - mongo
+        # condition: service_started
+    links:
+      - discovery-server
 
-  # api-gateway:
-  #   build: ./api-gateway
-  #   ports:
-  #     - "8080:8080"
-  #   depends_on:
-  #     - discovery-server
-  #   networks:
-  #     - backend
-  #   environment:
-  #     - SPRING_PROFILES_ACTIVE=docker
-
-  # product-service:
-  #   build: ./product-service
-  #   ports:
-  #     - "8081:8081"
-  #   depends_on:
-  #     - mongodb
-  #     - discovery-server
-  #   networks:
-  #     - backend
-  #   environment:
-  #     - SPRING_PROFILES_ACTIVE=docker
-
-  # Add order-service, cart-service etc. similarly...
-
-networks:
-  backend:
+volumes:
+  mongo_data:
