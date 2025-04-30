@@ -281,5 +281,62 @@ public String bridgeTest() {
 }
 
 
+@GetMapping("/proxy-demo")
+public String proxyDemo(@RequestParam String id) {
+    ProductService service = new ProxyProductService();
+
+    Product product = service.getProductById(id);
+
+    if (product == null) return "❌ Product access blocked!";
+    return "✅ Product: " + product.getName() + " ₹" + product.getPrice();
+}
+
+@GetMapping("/flyweight-demo")
+public String flyweightDemo() {
+    Product p1 = new Product("iPhone 14", 79999, MetadataFactory.getMetadata("Apple", "Electronics"));
+    Product p2 = new Product("MacBook Pro", 199999, MetadataFactory.getMetadata("Apple", "Electronics"));
+    Product p3 = new Product("AirPods", 19999, MetadataFactory.getMetadata("Apple", "Electronics"));
+    Product p4 = new Product("T-Shirt", 499, MetadataFactory.getMetadata("Zara", "Clothing"));
+
+    StringBuilder sb = new StringBuilder();
+    sb.append(p1.getDetails()).append("\n");
+    sb.append(p2.getDetails()).append("\n");
+    sb.append(p3.getDetails()).append("\n");
+    sb.append(p4.getDetails()).append("\n");
+
+    sb.append("🧠 Metadata cache size: ").append(MetadataFactory.cacheSize());
+
+    return "<pre>" + sb + "</pre>";
+}
+
+
+@GetMapping("/facade-demo")
+public String facadeDemo() {
+    Product p = new Product("Laptop", "Intel i7", 999.0, "electronics");
+    p.setBrand("Apple");
+
+    ProductCreationFacade facade = new ProductCreationFacade();
+    facade.createProduct(p);
+
+    return "✅ Product created via Facade!";
+}
+
+
+@GetMapping("/decorator-demo")
+public String decoratorDemo() {
+    Product product = new Product("Smartphone", "Android phone", 10000.0, "electronics");
+
+    PriceCalculator calc = new BasePriceCalculator();
+    calc = new GstTaxDecorator(calc);          // add 18% GST
+    calc = new ShippingDecorator(calc);        // add ₹49 shipping
+    calc = new DiscountDecorator(calc);        // subtract 10% discount
+
+    double finalPrice = calc.calculate(product);
+
+    return "Final decorated price: ₹" + finalPrice;
+}
+
+
+
 
 }
