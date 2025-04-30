@@ -36,9 +36,7 @@ services:
       - SPRING_DATA_MONGODB_URI=mongodb://mongo:27017/products
     depends_on:
       - discovery-server
-        # condition: service_healthy
       - mongo
-        # condition: service_started
     links:
       - discovery-server
 

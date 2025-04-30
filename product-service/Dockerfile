@@ -21,4 +21,4 @@ EXPOSE 8080
 ENV SPRING_DEVTOOLS_RESTART_ENABLED=true
 
 # Run the app
-ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-jar", "app.jar"m ]
