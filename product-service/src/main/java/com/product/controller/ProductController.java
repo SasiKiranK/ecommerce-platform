@@ -211,6 +211,74 @@ public String validateChain() {
     return "✅ Product passed all validations!";
 }
 
+@GetMapping("/visitor-test")
+public String visitorDemo() {
+    Product p = new Product("Camera", "DSLR", 1200.0, "electronics");
+
+    // Apply different operations via visitors
+    p.accept(new ExportVisitor());
+    p.accept(new AuditVisitor());
+    p.accept(new TaxCalculatorVisitor());
+
+    return "✅ Visitors applied to product!";
+}
+
+@GetMapping("/memento-demo")
+public String mementoDemo() {
+    Product product = new Product("Chair", "Wooden chair", 150.0, "furniture");
+    ProductHistory history = new ProductHistory();
+
+    // Save original
+    history.save(product.save());
+
+    // Modify 1
+    product.setPrice(100);
+    product.setName("Discounted Chair");
+
+    // Save modified
+    history.save(product.save());
+
+    // Modify 2
+    product.setPrice(70);
+    product.setCategory("clearance");
+
+    System.out.println("💥 Current: " + product.getName() + ", ₹" + product.getPrice());
+
+    // Undo to previous
+    product.restore(history.undo());
+    System.out.println("↩ Undo 1: " + product.getName() + ", ₹" + product.getPrice());
+
+    // Undo to original
+    product.restore(history.undo());
+    System.out.println("↩ Undo 2: " + product.getName() + ", ₹" + product.getPrice());
+
+    return "✅ Memento pattern test complete. Check console!";
+}
+
+@GetMapping("/adapter-demo")
+public String adapterTest() {
+    VendorXProduct vendorProduct = new VendorXProduct("Dell XPS", "16GB RAM, 512 SSD", 1350.0, "electronics");
+
+    ProductAdapter adapter = new VendorXProductAdapter(vendorProduct);
+    Product p = adapter.convert();
+
+    return "✅ Adapted: " + p.getName() + ", ₹" + p.getPrice() + ", category: " + p.getCategory();
+}
+
+
+@GetMapping("/bridge-demo")
+public String bridgeTest() {
+    Product physical = new Product("T-Shirt", "Cotton", 499, "clothing");
+    Product digital = new Product("E-Book", "Learn Java", 299, "digital");
+
+    ProductSaver physicalSaver = new PhysicalProductSaver(new MongoProductPersistence());
+    ProductSaver digitalSaver = new DigitalProductSaver(new PostgresProductPersistence());
+
+    physicalSaver.saveProduct(physical);
+    digitalSaver.saveProduct(digital);
+
+    return "✅ Bridge Pattern demo complete! Check logs.";
+}
 
 
 
